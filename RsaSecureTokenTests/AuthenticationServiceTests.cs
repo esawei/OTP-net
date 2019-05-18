@@ -6,36 +6,26 @@ namespace RsaSecureToken.Tests
     [TestFixture]
     public class AuthenticationServiceTests
     {
-        private IProfile _profile;
-        private IToken _token;
-        private AuthenticationService _authenticationService;
-
         [SetUp]
         public void SetUp()
         {
             _profile = Substitute.For<IProfile>();
             _token = Substitute.For<IToken>();
-            _authenticationService = new AuthenticationService(_profile, _token);
+            _logger = Substitute.For<ILogger>();
+            _authenticationService = new AuthenticationService(_profile, _token, _logger);
         }
 
-        [Test()]
-        public void IsValid()
-        {
-            GivenPassword("joey", "91");
-            GivenRandom("000000");
+        private IProfile _profile;
+        private IToken _token;
+        private AuthenticationService _authenticationService;
+        private ILogger _logger;
 
-            var actual = WhenValidate("joey", "91000000");
-            
-            ShouleBeValid(actual);                       
-        }
-
-        [Test]
-        public void IsInvalid()
+        private bool WhenInvalid()
         {
             GivenPassword("joey", "91");
             GivenRandom("000000");
             var actual = WhenValidate("joey", "wrong password");
-            ShouldBeInvalid(actual);
+            return actual;
         }
 
         private static void ShouldBeInvalid(bool actual)
@@ -61,6 +51,43 @@ namespace RsaSecureToken.Tests
         private void GivenPassword(string account, string password)
         {
             _profile.GetPassword(account).Returns(password);
+        }
+
+        private bool WhenValid()
+        {
+            GivenPassword("joey", "91");
+            GivenRandom("000000");
+
+            var actual = WhenValidate("joey", "91000000");
+            return actual;
+        }
+
+        [Test]
+        public void IsValid()
+        {
+            var actual = WhenValid();
+            ShouleBeValid(actual);
+        }
+
+        [Test]
+        public void IsInvalid()
+        {
+            var actual = WhenInvalid();
+            ShouldBeInvalid(actual);
+        }
+
+        [Test]
+        public void Should_log_account_when_invalid()
+        {
+            WhenInvalid();
+            _logger.Received(1).Log(Arg.Is<string>(x => x.Contains("joey")));
+        }
+
+        [Test]
+        public void Should_not_log_account_when_valid()
+        {
+            WhenValid();
+            _logger.DidNotReceiveWithAnyArgs().Log("");
         }
     }
 }

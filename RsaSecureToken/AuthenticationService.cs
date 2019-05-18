@@ -7,17 +7,13 @@ namespace RsaSecureToken
     {
         private readonly IProfile _profile;
         private readonly IToken _token;
+        private readonly ILogger _logger;
 
-        public AuthenticationService()
-        {
-            _profile = new ProfileDao();
-            _token = new RsaTokenDao();
-        }
-
-        public AuthenticationService(IProfile profile, IToken token)
+        public AuthenticationService(IProfile profile, IToken token, ILogger logger)
         {
             _profile = profile;
             _token = token;
+            _logger = logger;
         }
 
         public bool IsValid(string account, string password)
@@ -38,9 +34,15 @@ namespace RsaSecureToken
             }
             else
             {
+                _logger.Log($"{account} try to login failed.");
                 return false;
             }
         }
+    }
+
+    public interface ILogger
+    {
+        void Log(string message);
     }
 
     public interface IProfile
