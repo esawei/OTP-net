@@ -1,40 +1,66 @@
-﻿using NUnit.Framework;
+﻿using NSubstitute;
+using NUnit.Framework;
 
 namespace RsaSecureToken.Tests
 {
     [TestFixture]
     public class AuthenticationServiceTests
     {
+        private IProfile _profile;
+        private IToken _token;
+        private AuthenticationService _authenticationService;
+
+        [SetUp]
+        public void SetUp()
+        {
+            _profile = Substitute.For<IProfile>();
+            _token = Substitute.For<IToken>();
+            _authenticationService = new AuthenticationService(_profile, _token);
+        }
+
         [Test()]
         public void IsValid()
         {
-            var target = new AuthenticationService(new StubProfileDao(), new StubRsaTokenDao());
+            GivenPassword("joey", "91");
+            GivenRandom("000000");
 
-            var actual = target.IsValid("joey", "91000000");
-
-            //always failed
-            Assert.IsTrue(actual);                       
+            var actual = WhenValidate("joey", "91000000");
+            
+            ShouleBeValid(actual);                       
         }
-    }
 
-    internal class StubProfileDao : IProfile
-    {
-        public string GetPassword(string account)
+        [Test]
+        public void IsInvalid()
         {
-            if (account=="joey")
-            {
-                return "91";
-            }
-
-            return "";
+            GivenPassword("joey", "91");
+            GivenRandom("000000");
+            var actual = WhenValidate("joey", "wrong password");
+            ShouldBeInvalid(actual);
         }
-    }
 
-    internal class StubRsaTokenDao : IToken
-    {
-        public string GetRandom(string account)
+        private static void ShouldBeInvalid(bool actual)
         {
-            return "000000";
+            Assert.IsFalse(actual);
+        }
+
+        private static void ShouleBeValid(bool actual)
+        {
+            Assert.IsTrue(actual);
+        }
+
+        private bool WhenValidate(string account, string password)
+        {
+            return _authenticationService.IsValid(account, password);
+        }
+
+        private void GivenRandom(string random)
+        {
+            _token.GetRandom("").ReturnsForAnyArgs(random);
+        }
+
+        private void GivenPassword(string account, string password)
+        {
+            _profile.GetPassword(account).Returns(password);
         }
     }
 }
