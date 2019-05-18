@@ -62,6 +62,16 @@ namespace RsaSecureToken.Tests
             return actual;
         }
 
+        private void ShouldLog(string message)
+        {
+            _logger.Received(1).Log(Arg.Is<string>(x => x.Contains(message)));
+        }
+
+        private void ShouldNotLog()
+        {
+            _logger.DidNotReceiveWithAnyArgs().Log("");
+        }
+
         [Test]
         public void IsValid()
         {
@@ -80,14 +90,14 @@ namespace RsaSecureToken.Tests
         public void Should_log_account_when_invalid()
         {
             WhenInvalid();
-            _logger.Received(1).Log(Arg.Is<string>(x => x.Contains("joey")));
+            ShouldLog("joey");
         }
 
         [Test]
         public void Should_not_log_account_when_valid()
         {
             WhenValid();
-            _logger.DidNotReceiveWithAnyArgs().Log("");
+            ShouldNotLog();
         }
     }
 }
